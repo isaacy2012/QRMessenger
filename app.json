@@ -1,0 +1,12 @@
+{
+  "name": "ReactExpoExercise",
+  "displayName": "ReactExpoExercise",
+  "expo": {
+    "name": "ReactExpoExercise",
+    "slug": "ReactExpoExercise",
+    "version": "1.0.0",
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  }
+}
