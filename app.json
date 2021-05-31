@@ -1,10 +1,9 @@
 {
-  "name": "ReactExpoExercise",
-  "displayName": "ReactExpoExercise",
   "expo": {
-    "name": "ReactExpoExercise",
-    "slug": "ReactExpoExercise",
+    "name": "QRMessenger",
+    "slug": "QRMessenger",
     "version": "1.0.0",
+    "userInterfaceStyle": "automatic",
     "assetBundlePatterns": [
       "**/*"
     ]
