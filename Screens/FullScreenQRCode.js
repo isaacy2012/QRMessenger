@@ -32,6 +32,7 @@ export default function FullScreenQRCode({navigation, route}) {
         }
     }, [route.params?.data]);
 
+    //set the size of the QR Code to be as big as possible
     let size = Math.min(Dimensions.get('window').width, Dimensions.get('window').height);
 
     return (

@@ -73,4 +73,5 @@ export const styles = (colors) => StyleSheet.create({
         color: colors.text
     },
     invisible: {display: 'none'},
+    visible: {}
 });

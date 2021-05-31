@@ -6,14 +6,17 @@ import {
     TextInput,
     View,
     SafeAreaView,
-    ScrollView, TouchableHighlight, Alert,
+    TouchableHighlight,
+    Alert, Platform,
 } from 'react-native';
+import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scrollview'
 import {BarCodeScanner} from 'expo-barcode-scanner';
 import SvgQRCode from 'react-native-qrcode-svg';
 import Clipboard from 'expo-clipboard';
 import {Card} from 'react-native-paper';
 import {styles} from "../Styles";
 import {useTheme} from "@react-navigation/native";
+
 
 /**
  * ScreenHome
@@ -55,11 +58,18 @@ export default function Home({navigation, route}) {
      */
     useEffect(() => {
         (async () => {
-            const {status} = await BarCodeScanner.requestPermissionsAsync();
-            setHasPermission(status === 'granted');
+            if (Platform.OS.toLowerCase() === "web") {
+                setHasPermission(true);
+            } else {
+                const { status } = await BarCodeScanner?.requestPermissionsAsync();
+                setHasPermission(status === "granted");
+            }
         })();
     }, []);
 
+    /**
+     * Paste from clipboard
+     */
     const pasteFromClipBoard = () => {
         let stringAsync = Clipboard.getStringAsync();
         stringAsync.then(str => setSendText(str));
@@ -67,9 +77,9 @@ export default function Home({navigation, route}) {
 
     return (
         <SafeAreaView style={styles(colors).app}>
-            <Text style={styles(colors).titleText}
-            >QR Messenger</Text>
-            <ScrollView style={styles(colors).scrollView}>
+            <KeyboardAwareScrollView style={styles(colors).scrollView}>
+                <Text style={styles(colors).titleText}
+                >QR Messenger</Text>
                 <Card style={styles(colors).card}>
                     <Text style={styles(colors).heading}>Send</Text>
                     <View
@@ -92,13 +102,21 @@ export default function Home({navigation, route}) {
                             />
                         </TouchableHighlight>
                     </View>
-                    <TextInput
+                <TextInput
                         multiline={false}
                         style={styles(colors).input}
                         placeholder={"Type message here"}
                         onChangeText={(text) => setSendText(text)}
                         value={sendText}
                     />
+                    <View
+                        style={sendText !== '' ? styles(colors).visible : styles(colors).invisible}
+                    >
+                        <Button
+                            onPress={() => setSendText('')}
+                            title="Clear"
+                        />
+                    </View>
                     <Button onPress={pasteFromClipBoard} title="Paste From Clipboard"/>
                 </Card>
                 <Card style={styles(colors).card}>
@@ -109,7 +127,7 @@ export default function Home({navigation, route}) {
                         onPress={() => navigation.navigate('Scan')}
                     />
                 </Card>
-            </ScrollView>
+            </KeyboardAwareScrollView>
         </SafeAreaView>
     );
 }

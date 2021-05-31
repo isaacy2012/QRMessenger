@@ -28,7 +28,7 @@ export default function Scan({navigation, route}) {
     const onQRCodeScanned = ({data}) => {
         setScanned(true);
         //Tell user
-        Alert.alert("Scan", `${data} copied to clipboard!`);
+        Alert.alert("Scan", 'Contents copied to clipboard!');
         //Copy to clipboard
         Clipboard.setString(String(data));
         //go back home
