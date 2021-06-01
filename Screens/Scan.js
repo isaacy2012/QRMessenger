@@ -18,14 +18,14 @@ import {styles} from "../Styles";
  * @constructor
  */
 export default function Scan({navigation, route}) {
-    const { colors } = useTheme();
+    const {colors} = useTheme();
     const [scanned, setScanned] = useState(false);
 
     /**
      * When QRCode is scanned
      * @param data the data recieved
      */
-    const onQRCodeScanned = ({data}) => {
+    function onQRCodeScanned({data}) {
         setScanned(true);
         //Tell user
         Alert.alert("Scan", 'Contents copied to clipboard!');
@@ -37,7 +37,7 @@ export default function Scan({navigation, route}) {
             params: {data: data},
             merge: true,
         })
-    };
+    }
 
 
     return (
