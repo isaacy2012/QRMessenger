@@ -18,7 +18,6 @@ import {styles} from "../Styles";
 import {useTheme} from "@react-navigation/native";
 
 
-
 /**
  * ScreenHome
  * @param navigation
@@ -33,26 +32,15 @@ export default function Home({navigation, route}) {
     const [receiveText, setReceiveText] = useState('Nothing Received Yet');
     const [hasPermission, setHasPermission] = useState(true);
 
-    React.useEffect(() => {
+    /**
+     * On route parameter update
+     */
+    useEffect(() => {
         if (route.params?.data) {
-            // Post updated, do something with `route.params.post`
-            // For example, send the post to the server
+            // Set the recieveText to the data given to us from the "Scan" screen
             setReceiveText(route.params.data);
         }
     }, [route.params?.data]);
-
-    /**
-     * Get the QR Code Size
-     * @param len the length of the string to encode
-     * @returns {number}
-     */
-    const getQRCodeSize = (len) => {
-        if (len < 10) {
-            return 40 * Math.log(10);
-        }
-        return 40 * Math.log(len);
-    };
-
 
     /**
      * Ask for Permissions
@@ -62,16 +50,28 @@ export default function Home({navigation, route}) {
             if (Platform.OS.toLowerCase() === "web") {
                 setHasPermission(true);
             } else {
-                const { status } = await BarCodeScanner?.requestPermissionsAsync();
+                const {status} = await BarCodeScanner?.requestPermissionsAsync();
                 setHasPermission(status === "granted");
             }
         })();
     }, []);
 
     /**
+     * Get the QR Code Size
+     * @param len the length of the string to encode
+     * @returns {number}
+     */
+    function getQRCodeSize(len) {
+        if (len < 10) {
+            return 40 * Math.log(10);
+        }
+        return 40 * Math.log(len);
+    }
+
+    /**
      * Paste from clipboard
      */
-    const pasteFromClipBoard = () => {
+    function pasteFromClipBoard() {
         let stringAsync = Clipboard.getStringAsync();
         stringAsync.then(str => setSendText(str));
     }
@@ -95,6 +95,9 @@ export default function Home({navigation, route}) {
                         >
                             <SvgQRCode
                                 value={sendText !== '' ? sendText : 'null'}
+                                // if there is an error with the QR Code, its likely because there was
+                                // too much data to store in the QR Code, so tell the user and reset
+                                // the textInput
                                 onError={() => {
                                     setSendText('')
                                     Alert.alert("QR Code Error", "Too much data to store into a QR Code");
@@ -103,10 +106,11 @@ export default function Home({navigation, route}) {
                             />
                         </TouchableHighlight>
                     </View>
-                <TextInput
+                    <TextInput
                         multiline={false}
                         style={styles(colors).input}
                         placeholder={"Type message here"}
+                        //Update the sendText
                         onChangeText={(text) => setSendText(text)}
                         value={sendText}
                     />
@@ -121,10 +125,11 @@ export default function Home({navigation, route}) {
                     <Button onPress={pasteFromClipBoard} title="Paste From Clipboard"/>
                 </Card>
                 <Card style={styles(colors).card}>
-                    <Text style={styles(colors).heading}>Recieve</Text>
+                    <Text style={styles(colors).heading}>Receive</Text>
                     <Text style={styles(colors).receiveText} selectable>{receiveText}</Text>
                     <Button
                         title="Scan"
+                        // Navigate to the scan page
                         onPress={() => navigation.navigate('Scan')}
                     />
                 </Card>

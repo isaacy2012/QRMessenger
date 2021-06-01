@@ -20,10 +20,10 @@ import {useTheme} from "@react-navigation/native";
 
 
 /**
- * ScreenHome
+ * History Screen
  * @param navigation
  * @param route
- * @returns {JSX.Element}
+ * @returns {JSX.Element} History Screen
  * @constructor
  */
 export default function History({navigation, route}) {

@@ -13,10 +13,10 @@ import SvgQRCode from "react-native-qrcode-svg";
 import { Dimensions } from 'react-native';
 
 /**
- * Scan
+ * Fullscreen QR Code Screen
  * @param navigation
  * @param route
- * @returns {JSX.Element}
+ * @returns {JSX.Element} Fullscreen QR Code Screen
  * @constructor
  */
 export default function FullScreenQRCode({navigation, route}) {
@@ -26,8 +26,7 @@ export default function FullScreenQRCode({navigation, route}) {
 
     React.useEffect(() => {
         if (route.params?.data) {
-            // Post updated, do something with `route.params.post`
-            // For example, send the post to the server
+            // Set the data of this QR Code to the data given to us from the "Home" screen
             setData(route.params.data);
         }
     }, [route.params?.data]);

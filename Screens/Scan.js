@@ -11,10 +11,10 @@ import {useTheme} from '@react-navigation/native';
 import {styles} from "../Styles";
 
 /**
- * Scan
+ * Scan Screen
  * @param navigation
  * @param route
- * @returns {JSX.Element}
+ * @returns {JSX.Element} Scan Screen
  * @constructor
  */
 export default function Scan({navigation, route}) {

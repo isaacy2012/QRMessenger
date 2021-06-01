@@ -9,60 +9,74 @@ import Home from "./Screens/Home";
 import Scan from "./Screens/Scan";
 import History from "./Screens/History";
 import FullScreenQRCode from "./Screens/FullScreenQRCode";
+import {Platform} from "react-native-web";
 
-
-
+/**
+ * Application Entry Point
+ * @returns {JSX.Element}
+ * @constructor
+ */
 export default function App() {
 
-    //Navigation stack
+    // Stack Navigation
     const Stack = createStackNavigator();
+    // Tabbed Navigation
     const Tab = createBottomTabNavigator();
 
-    const scheme = useColorScheme();
+    const colorScheme = useColorScheme();
 
+    /**
+     * Get the icon name, wrt the focus and current platform
+     * @param str the base icon name e.g "list"
+     * @param focused whether the icon should be in focus or not
+     * @returns {string} the final icon name
+     */
     function getIconName(str, focused) {
-        if (Platform.OS === "ios") {
+        if (Platform.OS === "ios") { //ios
             let ret = "ios-" + str;
             if (focused) {
                 return ret;
             } else {
                 return ret + "-outline";
             }
-
-
-        } else {
+        } else { //Android
             return "md-" + str;
         }
     }
 
+    /**
+     * The home stack.
+     * Home:
+     *  QR Code
+     *  Scan
+     * @returns {JSX.Element}
+     * @constructor
+     */
     function HomeStack() {
-
         return (
-                <Stack.Navigator mode="modal">
-                    <Stack.Screen name="Home" component={Home} options={{headerShown: false}}/>
-                    <Stack.Screen name="QR Code" component={FullScreenQRCode}/>
-                    <Stack.Screen name="Scan" component={Scan}/>
-                </Stack.Navigator>
+            <Stack.Navigator mode="modal">
+                <Stack.Screen name="Home" component={Home} options={{headerShown: false}}/>
+                <Stack.Screen name="QR Code" component={FullScreenQRCode}/>
+                <Stack.Screen name="Scan" component={Scan}/>
+            </Stack.Navigator>
         );
     }
+
     return (
         <AppearanceProvider>
             <NavigationContainer
-                theme={scheme === "dark" ? DarkTheme : DefaultTheme}
+                theme={colorScheme === "dark" ? DarkTheme : DefaultTheme}
             >
                 <Tab.Navigator
-                    screenOptions={({ route }) => ({
-                        tabBarIcon: ({ focused, color, size }) => {
+                    screenOptions={({route}) => ({
+                        tabBarIcon: ({focused, color, size}) => {
                             let iconName;
-
                             if (route.name === "Home") {
                                 iconName = getIconName("scan", focused);
                             } else if (route.name === "History") {
                                 iconName = getIconName("list", focused);
                             }
-
-                            // You can return any component that you like here!
-                            return <Ionicons name={iconName} size={size} color={color} />;
+                            return <Ionicons name={iconName} size={size} color={color}/>;
                         },
                     })}
                 >
