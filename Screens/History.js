@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {Alert, SafeAreaView, SectionList, Text, TouchableHighlight, View} from 'react-native';
+import {Alert, Button, SafeAreaView, SectionList, Text, TouchableHighlight, View} from 'react-native';
 import {Card} from 'react-native-paper';
 import {styles} from "../Styles";
 import {
@@ -9,6 +9,7 @@ import {
 import Clipboard from "expo-clipboard";
 import * as SQLite from "expo-sqlite";
 import {useEffect, useState} from "react";
+import {shouldThrowAnErrorOutsideOfExpo} from "expo/build/environment/validatorState";
 
 
 function isToday(date) {
@@ -33,6 +34,19 @@ function daysBetween(a, b) {
     return Math.round(diffInTime / oneDay);
 }
 
+function compareItem(a, b) {
+    if (a.id !== b.id) {
+        return false;
+    }
+    if (a.value !== b.value) {
+        return false;
+    }
+    if (a.date !== b.date) {
+        return false;
+    }
+    return true;
+}
+
 /**
  * History Screen
  * @param navigation
@@ -43,53 +57,77 @@ function daysBetween(a, b) {
 export default function History({navigation, route}) {
     const {colors} = useTheme();
     const db = SQLite.openDatabase('db.db');
-
-    const [HistorySectionViewData, SetHistorySectionViewData] = React.useState([
+    const [changed, setChanged] = useState(false);
+    const [todayItems, setTodayItems] = useState([]);
+    const [yesterdayItems, setYesterdayItems] = useState([]);
+    const [olderItems, setOlderItems] = useState([]);
+    const HistorySectionViewData = [
         {
             title: "Today",
-            data: []
+            data: todayItems
         },
         {
             title: "Yesterday",
-            data: []
+            data: yesterdayItems
         },
         {
             title: "Older",
-            data: []
+            data: olderItems
         },
-    ]);
+    ]
+
+    function clearTable() {
+        db.transaction(tx => {
+            tx.executeSql(
+                'delete from items'
+            );
+            //reset all items
+            setTodayItems([]);
+            setYesterdayItems([]);
+            setOlderItems([]);
+            console.log(HistorySectionViewData);
+        });
+    }
 
     useFocusEffect(
         React.useCallback(() => {
-            Alert.alert("screen was focused");
             // Do something when the screen is focused
             console.log("here");
             db.transaction(tx => {
-                tx.executeSql(
-                    'create table if not exists items (id integer primary key not null, date text, value text);'
-                );
-                tx.executeSql('select * from items ordee by id asc', [], (_, {rows}) => {
-                        console.log("ROWS");
-                        console.log(rows);
-                        let temp = [HistorySectionViewData];
-                        for (let i = 0; i < rows.length; i++) {
-                            let item = rows.item(i);
-                            if (!temp.includes(item)) {
+                    tx.executeSql(
+                        'create table if not exists items (id integer primary key not null, date text, value text);'
+                    );
+                    tx.executeSql('select * from items order by id asc', [], (_, {rows}) => {
+                            //console.log(rows);
+                            for (let i = 0; i < rows.length; i++) {
+                                let item = rows.item(i);
                                 if (isToday(new Date(item.date))) {
-                                    temp[0].data.push(item);
-                                    //temp[2].data.push("another " + i);
+                                    if (todayItems.some(el => compareItem(el, item)) === false) {
+                                        todayItems.unshift(item);
+                                    }
                                 } else if (daysBetween(new Date(item.date), new Date()) === 1) {
-                                    temp[1].data.push(item);
+                                    if (yesterdayItems.some(el => compareItem(el, item)) === false) {
+                                        yesterdayItems.unshift(item);
+                                    }
                                 } else {
-                                    temp[2].data.push(item);
+                                    if (olderItems.some(el => compareItem(el, item)) === false) {
+                                        olderItems.unshift(item);
+                                    }
                                 }
+                                setTodayItems(todayItems);
+                                setYesterdayItems(yesterdayItems);
+                                setOlderItems(olderItems);
                             }
                         }
-                        SetHistorySectionViewData(temp);
-                        console.log(temp);
-                    }
-                );
-            });
+                    );
+                }
+                , undefined
+                , function after() {
+                    console.log(HistorySectionViewData);
+                    console.log("updating");
+                    setChanged(changed => !changed);
+                }
+            );
             return () => {
                 // Do something when the screen is unfocused
                 // Useful for cleanup functions
@@ -98,10 +136,9 @@ export default function History({navigation, route}) {
     );
 
 
-
     /**
      * When QRCode is scanned
-     * @param data the data recieved
+     * @param data the data received
      */
     function copyToClipboard({data}) {
         //Copy to clipboard
@@ -146,15 +183,21 @@ export default function History({navigation, route}) {
         );
     }
 
+
+    console.log("drawn");
     return (
         <SafeAreaView style={styles(colors).app}>
             <SectionList
                 sections={HistorySectionViewData}
-                extraData={HistorySectionViewData}
+                extraData={changed}
                 ListHeaderComponent={() => <Title/>}
-                keyExtractor={(item, index) => item + index}
+                // keyExtractor={(item, index) => item + index}
                 renderItem={({item}) => <Item item={item}/>}
                 renderSectionHeader={({section: {title}}) => <Header title={title}/>}
+            />
+            <Button
+                onPress={() => clearTable()}
+                title="Clear"
             />
         </SafeAreaView>
     );
