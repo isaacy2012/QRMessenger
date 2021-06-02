@@ -16,7 +16,7 @@ import Clipboard from 'expo-clipboard';
 import {Card} from 'react-native-paper';
 import {styles} from "../Styles";
 import {useTheme} from "@react-navigation/native";
-
+import * as SQLite from 'expo-sqlite';
 
 /**
  * ScreenHome
@@ -32,6 +32,13 @@ export default function Home({navigation, route}) {
     const [receiveText, setReceiveText] = useState('Nothing Received Yet');
     const [hasPermission, setHasPermission] = useState(true);
 
+    const db = SQLite.openDatabase('db.db');
+    db.transaction(tx => {
+        tx.executeSql(
+            'create table if not exists items (id integer primary key not null, date text, value text);'
+        );
+    });
+
     /**
      * On route parameter update
      */
@@ -39,6 +46,16 @@ export default function Home({navigation, route}) {
         if (route.params?.data) {
             // Set the recieveText to the data given to us from the "Scan" screen
             setReceiveText(route.params.data);
+            db.transaction(tx => {
+                console.log("trying...");
+                tx.executeSql(
+                    'insert into items (date, value) values (?,?)',[new Date().toDateString(), route.params.data]
+                );
+                tx.executeSql('select * from items', [], (_, { rows }) =>
+                    console.log(JSON.stringify(rows))
+                );
+            });
+
         }
     }, [route.params?.data]);
 
