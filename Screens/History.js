@@ -102,6 +102,23 @@ export default function History({navigation, route}) {
         });
     }
 
+    /**
+     * Build historySVData
+     */
+    function buildHistorySVData() {
+        //reset HistorySVData
+        items.HistorySVData = [];
+        if (items.todayItems.length > 0) {
+            items.HistorySVData.push({title: "Today", data: items.todayItems});
+        }
+        if (items.yesterdayItems.length > 0) {
+            items.HistorySVData.push({title: "Yesterday", data: items.yesterdayItems});
+        }
+        if (items.olderItems.length > 0) {
+            items.HistorySVData.push({title: "Older", data: items.olderItems});
+        }
+    }
+
 
     function deleteItemAtIndex(id) {
         console.log("deleted: " + id);
@@ -114,26 +131,13 @@ export default function History({navigation, route}) {
                 });
             }
         )
-        console.log("OLDTODAY: " + items.todayItems);
-        console.log("OLDYESTERDAY: " + items.yesterdayItems);
-        console.log("OLDOLDER: " + items.olderItems);
+        //only keep items with a different id to the deleted id
         items.todayItems = items.todayItems.filter(x => x.id !== id);
         items.yesterdayItems = items.yesterdayItems.filter(x => x.id !== id);
         items.olderItems = items.olderItems.filter(x => x.id !== id);
-        console.log("END");
-        console.log("TODAY: " + items.todayItems);
-        console.log("YESTERDAY: " + items.yesterdayItems);
-        console.log("OLDER: " + items.olderItems);
-        items.HistorySVData = [];
-        if (items.todayItems.length > 0) {
-            items.HistorySVData.push({title: "Today", data: items.todayItems});
-        }
-        if (items.yesterdayItems.length > 0) {
-            items.HistorySVData.push({title: "Yesterday", data: items.yesterdayItems});
-        }
-        if (items.olderItems.length > 0) {
-            items.HistorySVData.push({title: "Older", data: items.olderItems});
-        }
+
+        buildHistorySVData();
+
         setItems({
             ...items
         })
@@ -171,21 +175,9 @@ export default function History({navigation, route}) {
                                     items.olderItems.unshift(item);
                                 }
                             }
-                            let tempHistorySVData = [];
-                            if (items.todayItems.length > 0) {
-                                tempHistorySVData.push({title: "Today", data: items.todayItems});
-                            }
-                            if (items.yesterdayItems.length > 0) {
-                                tempHistorySVData.HistorySVData.push({title: "Yesterday", data: items.yesterdayItems});
-                            }
-                            if (items.olderItems.length > 0) {
-                                tempHistorySVData.HistorySVData.push({title: "Older", data: items.olderItems});
-                            }
+                            buildHistorySVData();
                             setItems({
-                                todayItems: items.todayItems,
-                                yesterdayItems: items.yesterdayItems,
-                                olderItems: items.olderItems,
-                                HistorySVData: tempHistorySVData,
+                                ...items
                             })
                             console.log(items.HistorySVData);
                         }
@@ -295,10 +287,11 @@ export default function History({navigation, route}) {
     return (
         <ActionSheetProvider>
             <SafeAreaView style={styles(colors).app}>
-                <Button
-                    onPress={() => clearTable()}
-                    title="Clear"
-                />
+                {/*Used for debugging only*/}
+                {/*<Button*/}
+                {/*    onPress={() => clearTable()}*/}
+                {/*    title="Clear"*/}
+                {/*/>*/}
                 <SectionList
                     sections={items.HistorySVData}
                     extraData={changed}
