@@ -223,10 +223,11 @@ export default function History({navigation, route}) {
 
     function Item({item}) {
         const {showActionSheetWithOptions} = useActionSheet();
-        const buttons = ['Copy', 'Delete', 'Cancel'];
+        const buttons = ['Copy', 'Show QR Code', 'Delete', 'Cancel'];
         const COPY = 0;
-        const DELETE = 1;
-        const CANCEL = 2;
+        const SHOW_QR_CODE = 1;
+        const DELETE = 2;
+        const CANCEL = 3;
         const options = {
             options: buttons,
             cancelButtonIndex: CANCEL,
@@ -248,6 +249,13 @@ export default function History({navigation, route}) {
                                 case DELETE: {
                                     deleteItemAtIndex(item.id);
                                     break;
+                                }
+                                case SHOW_QR_CODE: {
+                                    navigation.navigate({
+                                        name: 'QR Code',
+                                        params: {data: item.value},
+                                        merge: true,
+                                    });
                                 }
                             }
                         }

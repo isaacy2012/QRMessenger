@@ -62,6 +62,22 @@ export default function App() {
         );
     }
 
+    /**
+     * The history stack.
+     * History:
+     *  QR Code
+     * @returns {JSX.Element}
+     * @constructor
+     */
+    function HistoryStack() {
+        return (
+            <Stack.Navigator mode="modal">
+                <Stack.Screen name="History" component={History} options={{headerShown: false}}/>
+                <Stack.Screen name="QR Code" component={FullScreenQRCode}/>
+            </Stack.Navigator>
+        );
+    }
+
     return (
         <AppearanceProvider>
             <NavigationContainer
@@ -81,7 +97,7 @@ export default function App() {
                     })}
                 >
                     <Tab.Screen name="Home" component={HomeStack}/>
-                    <Tab.Screen name="History" component={History}/>
+                    <Tab.Screen name="History" component={HistoryStack}/>
                 </Tab.Navigator>
             </NavigationContainer>
         </AppearanceProvider>
