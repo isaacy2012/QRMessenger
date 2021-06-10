@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {Alert, Button, SafeAreaView, SectionList, Text, TouchableHighlight, View} from 'react-native';
+import {Alert, Button, Platform, SafeAreaView, SectionList, Text, TouchableHighlight, View} from 'react-native';
 import {Card} from 'react-native-paper';
 import {styles} from "../Styles";
 import {
@@ -9,7 +9,8 @@ import {
 import Clipboard from "expo-clipboard";
 import * as SQLite from "expo-sqlite";
 import {useEffect, useState} from "react";
-import {shouldThrowAnErrorOutsideOfExpo} from "expo/build/environment/validatorState";
+import {ActionSheetProvider, useActionSheet} from '@expo/react-native-action-sheet'
+
 
 /**
  * Today
@@ -17,7 +18,7 @@ import {shouldThrowAnErrorOutsideOfExpo} from "expo/build/environment/validatorS
  */
 function todayDate() {
     const ret = new Date();
-    ret.setHours(0,0,0,0);
+    ret.setHours(0, 0, 0, 0);
     return ret;
 }
 
@@ -71,10 +72,19 @@ export default function History({navigation, route}) {
     const {colors} = useTheme();
     const db = SQLite.openDatabase('db.db');
     const [changed, setChanged] = useState(false);
-    const [todayItems, setTodayItems] = useState([]);
-    const [yesterdayItems, setYesterdayItems] = useState([]);
-    const [olderItems, setOlderItems] = useState([]);
-    const [HistorySVData, setHistorySVData] = useState([]);
+    //TODO merge all three into dict since **each useState should be one slice of state**
+    //https://stackoverflow.com/questions/55130032/how-to-call-multi-setter-usestate-react-hooks
+    const [items, setItems] = useState({
+        todayItems: [],
+        yesterdayItems: [],
+        olderItems: [],
+        HistorySVData: [],
+    })
+
+    // const [todayItems, setTodayItems] = useState([]);
+    // const [yesterdayItems, setYesterdayItems] = useState([]);
+    // const [olderItems, setOlderItems] = useState([]);
+    // const [HistorySVData, setHistorySVData] = useState([]);
 
     function clearTable() {
         db.transaction(tx => {
@@ -82,11 +92,56 @@ export default function History({navigation, route}) {
                 'delete from items'
             );
             //reset all items
-            setTodayItems([]);
-            setYesterdayItems([]);
-            setOlderItems([]);
-            console.log(HistorySVData);
+            setItems({
+                todayItems: [],
+                yesterdayItems: [],
+                olderItems: [],
+                HistorySVData: [],
+            })
+            console.log(items.HistorySVData);
         });
+    }
+
+    /**
+     * Build historySVData
+     */
+    function buildHistorySVData() {
+        //reset HistorySVData
+        items.HistorySVData = [];
+        if (items.todayItems.length > 0) {
+            items.HistorySVData.push({title: "Today", data: items.todayItems});
+        }
+        if (items.yesterdayItems.length > 0) {
+            items.HistorySVData.push({title: "Yesterday", data: items.yesterdayItems});
+        }
+        if (items.olderItems.length > 0) {
+            items.HistorySVData.push({title: "Older", data: items.olderItems});
+        }
+    }
+
+
+    function deleteItemAtIndex(id) {
+        console.log("deleted: " + id);
+        db.transaction(tx => {
+                tx.executeSql(
+                    'delete from items where id = ?', [id]
+                );
+                tx.executeSql('select * from items order by id asc', [], (_, {rows}) => {
+                    console.log(rows);
+                });
+            }
+        )
+        //only keep items with a different id to the deleted id
+        items.todayItems = items.todayItems.filter(x => x.id !== id);
+        items.yesterdayItems = items.yesterdayItems.filter(x => x.id !== id);
+        items.olderItems = items.olderItems.filter(x => x.id !== id);
+
+        buildHistorySVData();
+
+        setItems({
+            ...items
+        })
+        setChanged(changed => !changed);
     }
 
     /**
@@ -98,46 +153,40 @@ export default function History({navigation, route}) {
                     'create table if not exists items (id integer primary key not null, date text, value text);'
                 );
                 tx.executeSql('select * from items order by id asc', [], (_, {rows}) => {
-                        //console.log(rows);
+                        items.todayItems = [];
+                        items.yesterdayItems = [];
+                        items.olderItems = [];
+
+                        console.log(rows);
                         for (let i = 0; i < rows.length; i++) {
                             let item = rows.item(i);
                             if (isToday(new Date(item.date))) {
-                                if (todayItems.some(el => compareItem(el, item)) === false) {
-                                    todayItems.unshift(item);
+                                if (items.todayItems.some(el => compareItem(el, item)) === false) {
+                                    items.todayItems.unshift(item);
                                 }
                             } else if (daysSince(new Date(item.date)) === 1) {
-                                if (yesterdayItems.some(el => compareItem(el, item)) === false) {
-                                    yesterdayItems.unshift(item);
+                                if (items.yesterdayItems.some(el => compareItem(el, item)) === false) {
+                                    items.yesterdayItems.unshift(item);
                                 }
                             } else {
                                 console.log("diff was : " + daysSince(new Date(item.date)));
                                 console.log("since todayDate was " + todayDate());
-                                if (olderItems.some(el => compareItem(el, item)) === false) {
-                                    olderItems.unshift(item);
+                                if (items.olderItems.some(el => compareItem(el, item)) === false) {
+                                    items.olderItems.unshift(item);
                                 }
                             }
-                            setTodayItems(todayItems);
-                            setYesterdayItems(yesterdayItems);
-                            setOlderItems(olderItems);
-                            let tempHistorySVData = [];
-                            if (todayItems.length > 0) {
-                                tempHistorySVData.push({title:"Today", data:todayItems});
-                            }
-                            if (yesterdayItems.length > 0) {
-                                tempHistorySVData.push({title:"Yesterday", data:yesterdayItems});
-                            }
-                            if (olderItems.length > 0) {
-                                tempHistorySVData.push({title:"Older", data:olderItems});
-                            }
-                            setHistorySVData(tempHistorySVData);
-                            console.log(tempHistorySVData);
+                            buildHistorySVData();
+                            setItems({
+                                ...items
+                            })
+                            console.log(items.HistorySVData);
                         }
                     }
                 );
             }
             , undefined
             , function after() {
-                console.log(HistorySVData);
+                console.log(items.HistorySVData);
                 console.log("updating");
                 setChanged(changed => !changed);
             }
@@ -171,12 +220,48 @@ export default function History({navigation, route}) {
         copyToClipboard({data});
     }
 
+
     function Item({item}) {
+        const {showActionSheetWithOptions} = useActionSheet();
+        const buttons = ['Copy', 'Show QR Code', 'Delete', 'Cancel'];
+        const COPY = 0;
+        const SHOW_QR_CODE = 1;
+        const DELETE = 2;
+        const CANCEL = 3;
+        const options = {
+            options: buttons,
+            cancelButtonIndex: CANCEL,
+            destructiveButtonIndex: DELETE,
+        };
         return (
             <TouchableHighlight
                 activeOpacity={0.6}
                 onPress={() => copyToClipboard({data: item.value})}
-                onLongPress={() => copyToClipboardWithAlert({data: item.value})}
+                onLongPress={() => {
+                    showActionSheetWithOptions(
+                        options,
+                        buttonIndex => {
+                            switch (buttonIndex) {
+                                case COPY: {
+                                    copyToClipboard({data: item.value});
+                                    break;
+                                }
+                                case DELETE: {
+                                    deleteItemAtIndex(item.id);
+                                    break;
+                                }
+                                case SHOW_QR_CODE: {
+                                    navigation.navigate({
+                                        name: 'QR Code',
+                                        params: {data: item.value},
+                                        merge: true,
+                                    });
+                                }
+                            }
+                        }
+                    )
+                }
+                }//copyToClipboardWithAlert({data: item.value})}
             >
                 <Card style={styles(colors).card}>
                     <Text style={styles(colors).receiveText}>{item.value}</Text>
@@ -205,21 +290,25 @@ export default function History({navigation, route}) {
     }
 
 
-    //console.log("drawn");
+    console.log("drawn");
+    console.log(items.HistorySVData);
     return (
-        <SafeAreaView style={styles(colors).app}>
-            <SectionList
-                sections={HistorySVData}
-                extraData={changed}
-                ListHeaderComponent={() => <Title/>}
-                // keyExtractor={(item, index) => item + index}
-                renderItem={({item}) => <Item item={item}/>}
-                renderSectionHeader={({section: {title}}) => <Header title={title}/>}
-            />
-            <Button
-                onPress={() => clearTable()}
-                title="Clear"
-            />
-        </SafeAreaView>
+        <ActionSheetProvider>
+            <SafeAreaView style={styles(colors).app}>
+                {/*Used for debugging only*/}
+                {/*<Button*/}
+                {/*    onPress={() => clearTable()}*/}
+                {/*    title="Clear"*/}
+                {/*/>*/}
+                <SectionList
+                    sections={items.HistorySVData}
+                    extraData={changed}
+                    ListHeaderComponent={() => <Title/>}
+                    // keyExtractor={(item, index) => item + index}
+                    renderItem={({item}) => <Item item={item}/>}
+                    renderSectionHeader={({section: {title}}) => <Header title={title}/>}
+                />
+            </SafeAreaView>
+        </ActionSheetProvider>
     );
 }
