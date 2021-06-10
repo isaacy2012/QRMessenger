@@ -74,10 +74,17 @@ export default function History({navigation, route}) {
     const [changed, setChanged] = useState(false);
     //TODO merge all three into dict since **each useState should be one slice of state**
     //https://stackoverflow.com/questions/55130032/how-to-call-multi-setter-usestate-react-hooks
-    const [todayItems, setTodayItems] = useState([]);
-    const [yesterdayItems, setYesterdayItems] = useState([]);
-    const [olderItems, setOlderItems] = useState([]);
-    const [HistorySVData, setHistorySVData] = useState([]);
+    const [items, setItems] = useState({
+        todayItems: [],
+        yesterdayItems: [],
+        olderItems: [],
+        HistorySVData: [],
+    })
+
+    // const [todayItems, setTodayItems] = useState([]);
+    // const [yesterdayItems, setYesterdayItems] = useState([]);
+    // const [olderItems, setOlderItems] = useState([]);
+    // const [HistorySVData, setHistorySVData] = useState([]);
 
     function clearTable() {
         db.transaction(tx => {
@@ -85,10 +92,13 @@ export default function History({navigation, route}) {
                 'delete from items'
             );
             //reset all items
-            setTodayItems([]);
-            setYesterdayItems([]);
-            setOlderItems([]);
-            console.log(HistorySVData);
+            setItems({
+                todayItems: [],
+                yesterdayItems: [],
+                olderItems: [],
+                HistorySVData: [],
+            })
+            console.log(items.HistorySVData);
         });
     }
 
@@ -104,31 +114,29 @@ export default function History({navigation, route}) {
                 });
             }
         )
-        console.log("OLDTODAY: " + todayItems);
-        console.log("OLDYESTERDAY: " + yesterdayItems);
-        console.log("OLDOLDER: " + olderItems);
-        let tempTodayItems = todayItems.filter(x => x.id !== id);
-        let tempYesterdayItems = yesterdayItems.filter(x => x.id !== id);
-        let tempOlderItems = olderItems.filter(x => x.id !== id);
+        console.log("OLDTODAY: " + items.todayItems);
+        console.log("OLDYESTERDAY: " + items.yesterdayItems);
+        console.log("OLDOLDER: " + items.olderItems);
+        items.todayItems = items.todayItems.filter(x => x.id !== id);
+        items.yesterdayItems = items.yesterdayItems.filter(x => x.id !== id);
+        items.olderItems = items.olderItems.filter(x => x.id !== id);
         console.log("END");
-        console.log("TODAY: " + tempTodayItems);
-        console.log("YESTERDAY: " + tempYesterdayItems);
-        console.log("OLDER: " + tempOlderItems);
-        let tempHistorySVData = [];
-        if (tempTodayItems.length > 0) {
-            tempHistorySVData.push({title: "Today", data: todayItems});
+        console.log("TODAY: " + items.todayItems);
+        console.log("YESTERDAY: " + items.yesterdayItems);
+        console.log("OLDER: " + items.olderItems);
+        items.HistorySVData = [];
+        if (items.todayItems.length > 0) {
+            items.HistorySVData.push({title: "Today", data: items.todayItems});
         }
-        if (tempYesterdayItems.length > 0) {
-            tempHistorySVData.push({title: "Yesterday", data: yesterdayItems});
+        if (items.yesterdayItems.length > 0) {
+            items.HistorySVData.push({title: "Yesterday", data: items.yesterdayItems});
         }
-        if (tempOlderItems.length > 0) {
-            tempHistorySVData.push({title: "Older", data: olderItems});
+        if (items.olderItems.length > 0) {
+            items.HistorySVData.push({title: "Older", data: items.olderItems});
         }
-        setTodayItems(tempTodayItems);
-        setYesterdayItems(tempYesterdayItems);
-        setOlderItems(tempOlderItems);
-        setHistorySVData(tempHistorySVData);
-        this.setState({todayItems: tempTodayItems, yesterdayItems: tempYesterdayItems, })
+        setItems({
+            ...items
+        })
         setChanged(changed => !changed);
     }
 
@@ -141,43 +149,52 @@ export default function History({navigation, route}) {
                     'create table if not exists items (id integer primary key not null, date text, value text);'
                 );
                 tx.executeSql('select * from items order by id asc', [], (_, {rows}) => {
+                        items.todayItems = [];
+                        items.yesterdayItems = [];
+                        items.olderItems = [];
+
                         console.log(rows);
                         for (let i = 0; i < rows.length; i++) {
                             let item = rows.item(i);
                             if (isToday(new Date(item.date))) {
-                                if (todayItems.some(el => compareItem(el, item)) === false) {
-                                    todayItems.unshift(item);
+                                if (items.todayItems.some(el => compareItem(el, item)) === false) {
+                                    items.todayItems.unshift(item);
                                 }
                             } else if (daysSince(new Date(item.date)) === 1) {
-                                if (yesterdayItems.some(el => compareItem(el, item)) === false) {
-                                    yesterdayItems.unshift(item);
+                                if (items.yesterdayItems.some(el => compareItem(el, item)) === false) {
+                                    items.yesterdayItems.unshift(item);
                                 }
                             } else {
                                 console.log("diff was : " + daysSince(new Date(item.date)));
                                 console.log("since todayDate was " + todayDate());
-                                if (olderItems.some(el => compareItem(el, item)) === false) {
-                                    olderItems.unshift(item);
+                                if (items.olderItems.some(el => compareItem(el, item)) === false) {
+                                    items.olderItems.unshift(item);
                                 }
                             }
                             let tempHistorySVData = [];
-                            if (todayItems.length > 0) {
-                                tempHistorySVData.push({title: "Today", data: todayItems});
+                            if (items.todayItems.length > 0) {
+                                tempHistorySVData.push({title: "Today", data: items.todayItems});
                             }
-                            if (yesterdayItems.length > 0) {
-                                tempHistorySVData.push({title: "Yesterday", data: yesterdayItems});
+                            if (items.yesterdayItems.length > 0) {
+                                tempHistorySVData.HistorySVData.push({title: "Yesterday", data: items.yesterdayItems});
                             }
-                            if (olderItems.length > 0) {
-                                tempHistorySVData.push({title: "Older", data: olderItems});
+                            if (items.olderItems.length > 0) {
+                                tempHistorySVData.HistorySVData.push({title: "Older", data: items.olderItems});
                             }
-                            setHistorySVData(tempHistorySVData);
-                            console.log(tempHistorySVData);
+                            setItems({
+                                todayItems: items.todayItems,
+                                yesterdayItems: items.yesterdayItems,
+                                olderItems: items.olderItems,
+                                HistorySVData: tempHistorySVData,
+                            })
+                            console.log(items.HistorySVData);
                         }
                     }
                 );
             }
             , undefined
             , function after() {
-                console.log(HistorySVData);
+                console.log(items.HistorySVData);
                 console.log("updating");
                 setChanged(changed => !changed);
             }
@@ -274,21 +291,21 @@ export default function History({navigation, route}) {
 
 
     console.log("drawn");
-    console.log(HistorySVData);
+    console.log(items.HistorySVData);
     return (
         <ActionSheetProvider>
             <SafeAreaView style={styles(colors).app}>
+                <Button
+                    onPress={() => clearTable()}
+                    title="Clear"
+                />
                 <SectionList
-                    sections={HistorySVData}
+                    sections={items.HistorySVData}
                     extraData={changed}
                     ListHeaderComponent={() => <Title/>}
                     // keyExtractor={(item, index) => item + index}
                     renderItem={({item}) => <Item item={item}/>}
                     renderSectionHeader={({section: {title}}) => <Header title={title}/>}
-                />
-                <Button
-                    onPress={() => clearTable()}
-                    title="Clear"
                 />
             </SafeAreaView>
         </ActionSheetProvider>
