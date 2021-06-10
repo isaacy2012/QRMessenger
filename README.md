@@ -2,10 +2,10 @@
 An app built with React Native to send and recieve data completely offline with QR Codes
 
 <p float="left">
-  <img src="readMeImages/home_light.png"  width="375" height="812">
-  <img src="readMeImages/history_light.png"  width="375" height="812">
-  <img src="readMeImages/home_dark.png"  width="375" height="812">
-  <img src="readMeImages/history_dark.png"  width="375" height="812">
+  <img src="readMeImages/home_light.png"  width="225" height="487.2">
+  <img src="readMeImages/history_light.png"  width="225" height="487.2">
+  <img src="readMeImages/home_dark.png"  width="225" height="487.2">
+  <img src="readMeImages/history_dark.png"  width="225" height="487.2">
  </p>
 
 <b>Send data to any phone without any mobile or internet connection</b>
