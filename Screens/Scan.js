@@ -62,6 +62,7 @@ export default function Scan({navigation, route}) {
     return (
         <SafeAreaView style={styles(colors).container}>
             <BarCodeScanner
+                barCodeTypes={[BarCodeScanner.Constants.BarCodeType.qr]}
                 onBarCodeScanned={scanned ? undefined : onQRCodeScanned}
                 style={StyleSheet.absoluteFillObject}
             />
